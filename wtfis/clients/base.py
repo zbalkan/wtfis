@@ -5,7 +5,15 @@ from typing import Optional, Union
 import requests
 
 from wtfis.models.common import WhoisBase
-from wtfis.types import IpEnrichmentType
+from wtfis.models.greynoise import GreynoiseIpMap
+from wtfis.models.ipwhois import IpWhoisMap
+from wtfis.models.shodan import ShodanIpMap
+
+IpEnrichmentType = Union[
+    GreynoiseIpMap,
+    IpWhoisMap,
+    ShodanIpMap,
+]
 
 
 class AbstractAttribute:
