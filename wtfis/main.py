@@ -8,9 +8,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from wtfis.config import Config
-from wtfis.result.resolver import Resolver
-from wtfis.utils import error_and_exit
+from wtfis.lib.config import Config
+from wtfis.lib.resolver import Resolver
+from wtfis.lib.utils import error_and_exit
 
 APP_NAME: str = 'wtfis'
 APP_VERSION: str = '0.7.1'
@@ -29,7 +29,8 @@ def parse_env() -> None:
         if not os.environ.get(envvar):
             error = f"Error: Environment variable {envvar} not set"
             if not DEFAULT_ENV_FILE.exists():
-                error = error + f"\nEnv file {DEFAULT_ENV_FILE} was not found either. Did you forget?"
+                error = error + \
+                    f"\nEnv file {DEFAULT_ENV_FILE} was not found either. Did you forget?"
             error_and_exit(error)
 
 
