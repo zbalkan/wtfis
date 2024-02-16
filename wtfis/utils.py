@@ -13,9 +13,9 @@ def refang(text: str) -> str:
     return text.replace("[", "").replace("]", "")
 
 
-def is_ip(text: str) -> bool:
+def is_ip(target: str) -> bool:
     """ Detect whether text is IPv4 or not """
     try:
-        return ip_address(refang(text)).is_global
+        return ip_address(refang(target)).is_global
     except ValueError:
         return False

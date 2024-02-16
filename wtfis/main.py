@@ -15,6 +15,7 @@ from wtfis.clients.ipwhois import IpWhoisClient
 from wtfis.clients.passivetotal import PTClient
 from wtfis.clients.shodan import ShodanClient
 from wtfis.clients.virustotal import VTClient
+from wtfis.config import Config
 from wtfis.handlers.base import BaseHandler
 from wtfis.handlers.domain import DomainHandler
 from wtfis.handlers.ip import IpAddressHandler
@@ -23,6 +24,7 @@ from wtfis.utils import error_and_exit, is_ip
 
 APP_NAME: str = 'wtfis'
 APP_VERSION: str = '0.1'
+
 
 def parse_env() -> None:
     DEFAULT_ENV_FILE = Path().home() / ".env.wtfis"
@@ -41,78 +43,31 @@ def parse_env() -> None:
             error_and_exit(error)
 
 
-def generate_entity_handler(target:str) -> BaseHandler:
-    # Virustotal client
-    vt_client = VTClient(os.environ["VT_API_KEY"])
-
-    # IP enrichment client selector
-    shodan_key = os.environ["SHODAN_API_KEY"]
-    enricher_client: Union[IpWhoisClient, ShodanClient] = (
-        ShodanClient(shodan_key) if shodan_key
-        else IpWhoisClient()
-    )
-
-    # Whois client selector
-    # Order of use based on set envvars:
-    #    1. Passivetotal
-    #    2. IP2Whois (Domain only)
-    #    2. Virustotal (fallback)
-    if os.environ.get("PT_API_USER") and os.environ.get("PT_API_KEY"):
-        whois_client: Union[PTClient, Ip2WhoisClient, VTClient] = (
-            PTClient(os.environ["PT_API_USER"], os.environ["PT_API_KEY"])
-        )
-    elif os.environ.get("IP2WHOIS_API_KEY") and not is_ip(target):
-        whois_client = Ip2WhoisClient(os.environ["IP2WHOIS_API_KEY"])
-    else:
-        whois_client = vt_client
-
-    # Greynoise client (optional)
-    greynoise_key = os.environ["GREYNOISE_API_KEY"]
-    greynoise_client = (
-        GreynoiseClient(greynoise_key)
-        if greynoise_key
-        else None
-    )
-
-    # Domain / FQDN handler
-    if not is_ip(target):
-        entity: BaseHandler = DomainHandler(
-            entity=target,
-            vt_client=vt_client,
-            ip_enricher_client=enricher_client,
-            whois_client=whois_client,
-            greynoise_client=greynoise_client
-        )
-    # IP address handler
-    else:
-        entity = IpAddressHandler(
-            entity=target,
-            vt_client=vt_client,
-            ip_enricher_client=enricher_client,
-            whois_client=whois_client,
-            greynoise_client=greynoise_client
-        )
-
-    return entity
-
 def main() -> None:
 
     # Pass the IP address
     # target:str = "142.171.193.6"
-    target:str = "indyjoy.com"
+    target: str = "indyjoy.com"
     # Load environment variables
     parse_env()
 
-    # Entity handler
-    entity = generate_entity_handler(target)
+    # Populate configuration
+    config: Config = Config(
+        vt_api_key=os.environ["VT_API_KEY"],
+        shodan_api_key=os.environ.get("SHODAN_API_KEY"),
+        pt_api_user=os.environ.get("PT_API_USER"),
+        pt_api_key=os.environ.get("PT_API_KEY"),
+        ip2whois_api_key=os.environ.get("IP2WHOIS_API_KEY"),
+        greynoise_api_key=os.environ.get("GREYNOISE_API_KEY"))
+
+    # Initiate resolver
+    resolver = Resolver(target, config)
 
     # Fetch data
-    entity.fetch_data()
+    resolver.fetch()
 
-    # Get results
-    resolver = Resolver(entity=entity)
-
-    result:str = resolver.resolve()
+    # Get result
+    result: str = resolver.export()
     print(result)
 
     print("Completed.")
@@ -125,6 +80,7 @@ def get_root_dir() -> str:
         return os.path.dirname(__file__)
     else:
         return './'
+
 
 if __name__ == "__main__":
     try:
