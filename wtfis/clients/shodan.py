@@ -1,6 +1,7 @@
+from typing import Optional
+
 from shodan import Shodan
 from shodan.exception import APIError
-from typing import Optional
 
 from wtfis.clients.base import BaseClient, BaseIpEnricherClient
 from wtfis.models.shodan import ShodanIp, ShodanIpMap
@@ -26,7 +27,7 @@ class ShodanClient(BaseClient, BaseIpEnricherClient):
             else:
                 raise
 
-    def enrich_ips(self, *ips: str) -> ShodanIpMap:
+    def enrich_ips(self, ips: list[str]) -> ShodanIpMap:
         shodan_map = {}
         for ip in ips:
             ip_data = self._get_ip(ip)

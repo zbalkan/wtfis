@@ -1,12 +1,13 @@
-import argparse
-import os
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
-from argparse import Namespace
-from dotenv import load_dotenv
+import logging
+import os
+import sys
 from pathlib import Path
-from rich.console import Console
-from rich.progress import Progress
 from typing import Union
+
+from dotenv import load_dotenv
 
 from wtfis.clients.greynoise import GreynoiseClient
 from wtfis.clients.ip2whois import Ip2WhoisClient
@@ -17,13 +18,11 @@ from wtfis.clients.virustotal import VTClient
 from wtfis.handlers.base import BaseHandler
 from wtfis.handlers.domain import DomainHandler
 from wtfis.handlers.ip import IpAddressHandler
-from wtfis.models.virustotal import Domain, IpAddress
+from wtfis.result.resolver import Resolver
 from wtfis.utils import error_and_exit, is_ip
-from wtfis.ui.base import BaseView
-from wtfis.ui.progress import get_progress
-from wtfis.ui.view import DomainView, IpAddressView
-from wtfis.version import get_version
 
+APP_NAME: str = 'wtfis'
+APP_VERSION: str = '0.1'
 
 def parse_env() -> None:
     DEFAULT_ENV_FILE = Path().home() / ".env.wtfis"
@@ -42,66 +41,14 @@ def parse_env() -> None:
             error_and_exit(error)
 
 
-def parse_args() -> Namespace:
-    DEFAULT_MAX_RESOLUTIONS = 3
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("entity", help="Hostname, domain or IP")
-    parser.add_argument(
-        "-m", "--max-resolutions", metavar="N",
-        help=f"Maximum number of resolutions to show (default: {DEFAULT_MAX_RESOLUTIONS})",
-        type=int,
-        default=DEFAULT_MAX_RESOLUTIONS
-    )
-    parser.add_argument("-s", "--use-shodan", help="Use Shodan to enrich IPs", action="store_true")
-    parser.add_argument("-g", "--use-greynoise", help="Enable Greynoise for IPs", action="store_true")
-    parser.add_argument("-n", "--no-color", help="Show output without colors", action="store_true")
-    parser.add_argument("-1", "--one-column", help="Display results in one column", action="store_true")
-    parser.add_argument(
-        "-V", "--version",
-        help="Print version number",
-        action="version",
-        version=get_version()
-    )
-    parsed = parser.parse_args()
-
-    # Default overrides
-    # If a default is set, then setting the flag as an argument _negates_ the effect
-    for option in os.environ.get("WTFIS_DEFAULTS", "").split(" "):
-        if option in ("-s", "--use-shodan"):
-            parsed.use_shodan = not parsed.use_shodan
-        elif option in ("-g", "--use-greynoise"):
-            parsed.use_greynoise = not parsed.use_greynoise
-        elif option in ("-n", "--no-color"):
-            parsed.no_color = not parsed.no_color
-        elif option in ("-1", "--one-column"):
-            parsed.one_column = not parsed.one_column
-
-    # Validation
-    if parsed.max_resolutions > 10:
-        argparse.ArgumentParser().error("Maximum --max-resolutions value is 10")
-    if parsed.use_shodan and not os.environ.get("SHODAN_API_KEY"):
-        argparse.ArgumentParser().error("SHODAN_API_KEY is not set")
-    if parsed.use_greynoise and not os.environ.get("GREYNOISE_API_KEY"):
-        argparse.ArgumentParser().error("GREYNOISE_API_KEY is not set")
-    if is_ip(parsed.entity) and parsed.max_resolutions != DEFAULT_MAX_RESOLUTIONS:
-        argparse.ArgumentParser().error("--max-resolutions is not applicable to IPs")
-
-    return parsed
-
-
-def generate_entity_handler(
-    args: Namespace,
-    console: Console,
-    progress: Progress,
-) -> BaseHandler:
+def generate_entity_handler(target:str) -> BaseHandler:
     # Virustotal client
     vt_client = VTClient(os.environ["VT_API_KEY"])
 
     # IP enrichment client selector
+    shodan_key = os.environ["SHODAN_API_KEY"]
     enricher_client: Union[IpWhoisClient, ShodanClient] = (
-        ShodanClient(os.environ["SHODAN_API_KEY"])
-        if args.use_shodan
+        ShodanClient(shodan_key) if shodan_key
         else IpWhoisClient()
     )
 
@@ -114,100 +61,94 @@ def generate_entity_handler(
         whois_client: Union[PTClient, Ip2WhoisClient, VTClient] = (
             PTClient(os.environ["PT_API_USER"], os.environ["PT_API_KEY"])
         )
-    elif os.environ.get("IP2WHOIS_API_KEY") and not is_ip(args.entity):
+    elif os.environ.get("IP2WHOIS_API_KEY") and not is_ip(target):
         whois_client = Ip2WhoisClient(os.environ["IP2WHOIS_API_KEY"])
     else:
         whois_client = vt_client
 
     # Greynoise client (optional)
+    greynoise_key = os.environ["GREYNOISE_API_KEY"]
     greynoise_client = (
-        GreynoiseClient(os.environ["GREYNOISE_API_KEY"])
-        if args.use_greynoise
+        GreynoiseClient(greynoise_key)
+        if greynoise_key
         else None
     )
 
     # Domain / FQDN handler
-    if not is_ip(args.entity):
+    if not is_ip(target):
         entity: BaseHandler = DomainHandler(
-            entity=args.entity,
-            console=console,
-            progress=progress,
+            entity=target,
             vt_client=vt_client,
             ip_enricher_client=enricher_client,
             whois_client=whois_client,
-            greynoise_client=greynoise_client,
-            max_resolutions=args.max_resolutions,
+            greynoise_client=greynoise_client
         )
     # IP address handler
     else:
         entity = IpAddressHandler(
-            entity=args.entity,
-            console=console,
-            progress=progress,
+            entity=target,
             vt_client=vt_client,
             ip_enricher_client=enricher_client,
             whois_client=whois_client,
-            greynoise_client=greynoise_client,
+            greynoise_client=greynoise_client
         )
 
     return entity
 
+def main() -> None:
 
-def generate_view(
-    args: Namespace,
-    console: Console,
-    entity: BaseHandler,
-) -> BaseView:
-    # Output display
-    if isinstance(entity, DomainHandler) and isinstance(entity.vt_info, Domain):
-        view: BaseView = DomainView(
-            console,
-            entity.vt_info,
-            entity.resolutions,
-            entity.whois,
-            entity.ip_enrich,
-            entity.greynoise,
-            max_resolutions=args.max_resolutions,
-        )
-    elif isinstance(entity, IpAddressHandler) and isinstance(entity.vt_info, IpAddress):
-        view = IpAddressView(
-            console,
-            entity.vt_info,
-            entity.whois,
-            entity.ip_enrich,
-            entity.greynoise,
-        )
-    else:
-        raise Exception("Unsupported entity!")
-
-    return view
-
-
-def main():
+    # Pass the IP address
+    # target:str = "142.171.193.6"
+    target:str = "indyjoy.com"
     # Load environment variables
     parse_env()
 
-    # Args
-    args = parse_args()
-
-    # Instantiate the console
-    console = Console(no_color=True) if args.no_color else Console()
-
-    # Progress animation controller
-    progress = get_progress(console)
-
     # Entity handler
-    entity = generate_entity_handler(args, console, progress)
+    entity = generate_entity_handler(target)
 
     # Fetch data
-    with progress:
-        entity.fetch_data()
+    entity.fetch_data()
 
-    # Print fetch warnings, if any
-    entity.print_warnings()
+    # Get results
+    resolver = Resolver(entity=entity)
 
-    # Output display
-    view = generate_view(args, console, entity)
+    result:str = resolver.resolve()
+    print(result)
 
-    # Finally, print output
-    view.print(one_column=args.one_column)
+    print("Completed.")
+
+
+def get_root_dir() -> str:
+    if getattr(sys, 'frozen', False):
+        return os.path.dirname(sys.executable)
+    elif __file__:
+        return os.path.dirname(__file__)
+    else:
+        return './'
+
+if __name__ == "__main__":
+    try:
+        logging.basicConfig(filename=os.path.join(get_root_dir(), f'{APP_NAME}.log'),
+                            encoding='utf-8',
+                            format='%(asctime)s:%(levelname)s:%(message)s',
+                            datefmt="%Y-%m-%dT%H:%M:%S%z",
+                            level=logging.INFO)
+
+        excepthook = logging.error
+        logging.info('Starting')
+        main()
+        logging.info('Exiting.')
+    except KeyboardInterrupt:
+        logging.warning('Cancelled by user.')
+        logging.info('Exiting.')
+        try:
+            sys.exit(0)
+        except SystemExit:
+            os._exit(0)
+    except Exception as ex:
+        logging.error('ERROR: ' + str(ex))
+        logging.info('Exiting.')
+        try:
+            sys.exit(1)
+        except SystemExit:
+            os._exit(1)

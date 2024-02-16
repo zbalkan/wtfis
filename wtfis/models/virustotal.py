@@ -1,5 +1,7 @@
-from pydantic import BaseModel, Field, RootModel, field_validator, model_validator
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
+
+from pydantic import (BaseModel, Field, RootModel, field_validator,
+                      model_validator)
 
 from wtfis.models.common import LaxStr, WhoisBase
 
@@ -49,11 +51,11 @@ class BaseAttributes(BaseModel):
     last_https_certificate_date: Optional[int] = None
     last_modification_date: Optional[int] = None
     reputation: int
-    tags: List[str]
+    tags: list[str]
 
 
 class DomainAttributes(BaseAttributes):
-    categories: List[str]
+    categories: list[str]
     creation_date: Optional[int] = None
     last_dns_records_date: Optional[int] = None
     last_update_date: Optional[int] = None
@@ -112,19 +114,7 @@ class ResolutionData(BaseData):
 
 class Resolutions(BaseModel):
     meta: Meta
-    data: List[ResolutionData]
-
-    def ip_list(self, limit: int) -> List[str]:
-        """
-        IP list from the first n resolutions
-        where n is defined by the limit
-        """
-        ips = []
-        for idx, resolution in enumerate(self.data):
-            if idx < limit:
-                ips.append(resolution.attributes.ip_address)
-        return ips
-
+    data: list[ResolutionData]
 
 class Whois(WhoisBase):
     source: str = "virustotal"
@@ -139,13 +129,13 @@ class Whois(WhoisBase):
     state: Optional[str] = Field(None, alias="Registrant State/Province")
     country: Optional[str] = None
     postal_code: Optional[str] = Field(None, alias="Registrant Postal Code")
-    name_servers: List[str] = Field([], alias="Name Server")
+    name_servers: list[str] = Field([], alias="Name Server")
     date_created: Optional[str] = None
     date_changed: Optional[LaxStr] = None
     date_expires: Optional[str] = None
     dnssec: Optional[str] = Field(None, alias="DNSSEC")
 
-    @model_validator(mode="before")
+    @model_validator(mode="before") # type: ignore
     @classmethod
     def get_latest_whois_record_and_transform(cls, v):
         data = v.pop("data")

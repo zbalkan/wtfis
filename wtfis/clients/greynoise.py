@@ -1,5 +1,6 @@
-from requests.exceptions import HTTPError
 from typing import Optional
+
+from requests.exceptions import HTTPError
 
 from wtfis.clients.base import BaseIpEnricherClient, BaseRequestsClient
 from wtfis.models.greynoise import GreynoiseIp, GreynoiseIpMap
@@ -30,7 +31,7 @@ class GreynoiseClient(BaseRequestsClient, BaseIpEnricherClient):
                 return None
             raise
 
-    def enrich_ips(self, *ips: str) -> GreynoiseIpMap:
+    def enrich_ips(self, ips: list[str]) -> GreynoiseIpMap:
         greynoise_map = {}
         for ip in ips:
             ip_data = self._get_ip(ip)

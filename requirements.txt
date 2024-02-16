@@ -1,0 +1,13 @@
+annotated-types==0.6.0
+certifi==2024.2.2
+charset-normalizer==3.3.2
+idna==3.6
+pydantic==2.0.3
+pydantic_core==2.3.0
+Pygments==2.17.2
+python-dotenv==1.0.1
+requests==2.31.0
+shodan==1.29.1
+typing_extensions==4.9.0
+urllib3==2.2.0
+-e git+https://github.com/zbalkan/wtfis.git@e55eb16c63e8aaa34219db36351175b333ec3730#egg=wtfis

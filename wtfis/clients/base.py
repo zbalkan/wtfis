@@ -1,8 +1,8 @@
 import abc
 import json
-import requests
-
 from typing import Optional, Union
+
+import requests
 
 from wtfis.models.common import WhoisBase
 from wtfis.types import IpEnrichmentType
@@ -59,5 +59,5 @@ class BaseIpEnricherClient(abc.ABC):
     Client used for IP enrichments
     """
     @abc.abstractmethod
-    def enrich_ips(self, *ips: str) -> IpEnrichmentType:  # pragma: no coverage
+    def enrich_ips(self, ips: list[str]) -> IpEnrichmentType:  # pragma: no coverage
         return NotImplemented
