@@ -36,7 +36,8 @@ def failopen_exception_handler(client_attr_name: str) -> Callable:
     """ Decorator for handling calls that can fail open """
     def inner(func):
         def wrapper(*args, **kwargs) -> None:
-            client = getattr(args[0], client_attr_name)  # Client obj who made the call
+            # Client obj who made the call
+            client = getattr(args[0], client_attr_name)
             warnings: List[str] = args[0].warnings
             try:
                 func(*args, **kwargs)
@@ -87,8 +88,15 @@ class BaseHandler(abc.ABC):
     @common_exception_handler
     @failopen_exception_handler("_greynoise")
     def _fetch_greynoise(self, ips: list[str]) -> None:
-        if self._greynoise:
-            self.greynoise = self._greynoise.enrich_ips(ips)
+        # Let continue if rate limited
+        try:
+            if self._greynoise:
+                self.greynoise = self._greynoise.enrich_ips(ips)
+        except HTTPError as e:
+            if e.response.status_code == 429:
+                self.warnings.append(f"Could not fetch Greynoise: {e}")
+            else:
+                raise
 
     @common_exception_handler
     def _fetch_whois(self) -> None:
@@ -100,7 +108,3 @@ class BaseHandler(abc.ABC):
                 self.warnings.append(f"Could not fetch Whois: {e}")
             else:
                 raise
-
-    def print_warnings(self) -> None:
-        for message in self.warnings:
-            print(f"WARN: {message}")

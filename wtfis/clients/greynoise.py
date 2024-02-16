@@ -27,9 +27,6 @@ class GreynoiseClient(BaseRequestsClient, BaseIpEnricherClient):
                 self._get(f"/{ip}", headers={"key": self.api_key})
             )
         except HTTPError as e:
-            if e.response.status_code == 429:
-                # Hit daily rate limits
-                return None
             if e.response.status_code == 404:
                 return None
             raise
