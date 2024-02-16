@@ -167,3 +167,4 @@ cython_debug/
 
 # Custom env
 .env.wtfis
+*.db
