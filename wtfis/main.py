@@ -41,7 +41,13 @@ def parse_env() -> None:
             error_and_exit(error)
 
 
-def query_with_cache(target: str, config: Config, cache_dir: str = './') -> str:
+def query_with_cache(target: str, config: Config, cache_dir: str = './') -> Optional[str]:
+
+    # Check if private IP or not
+    if is_private(target=target):
+        logging.info(f"The target IP is in private range: {target}")
+        return None
+
     logging.debug("Opening cache")
     with diskcache.Cache(directory=cache_dir) as cache:
 
@@ -82,11 +88,6 @@ def main() -> None:
     # target: str = "trivat.fun"
     target: str = "192.168.0.25"
 
-    # Check if private IP or not
-    if is_private(target=target):
-        logging.info(f"The target IP is in private range: {target}")
-        return
-
     # Load environment variables
     parse_env()
 
@@ -100,11 +101,15 @@ def main() -> None:
         greynoise_api_key=os.environ.get("GREYNOISE_API_KEY"))
 
     logging.info("Querying..")
-    result: str = query_with_cache(
+    result: Optional[str] = query_with_cache(
         target=target, config=config, cache_dir=get_root_dir())
 
-    logging.info("Printing the result...")
-    print(result)
+    if result:
+        logging.info("Result found. Printing the result...")
+        print(result)
+    else:
+        logging.info("No result found. Invalid address or private IP range")
+        print("No response")
 
     print("Completed.")
 
