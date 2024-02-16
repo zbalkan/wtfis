@@ -14,11 +14,21 @@ class IpAddressHandler(BaseHandler):
         self._fetch_vt_ip_address()
 
         print(f"Fetching IP enrichments from {self._enricher.name}")
-        self._fetch_ip_enrichments(self.entity)
+        if isinstance(self.entity, str):
+            self._fetch_ip_enrichments([self.entity])
+        elif isinstance(self.entity, list):
+            self._fetch_ip_enrichments(self.entity)
+        else:
+            raise Exception("Unknown IP format")
 
         if self._greynoise:
             print(f"Fetching IP enrichments from {self._greynoise.name}")
-            self._fetch_greynoise(self.entity)
+            if isinstance(self.entity, str):
+                self._fetch_greynoise([self.entity])
+            elif isinstance(self.entity, list):
+                self._fetch_greynoise(self.entity)
+            else:
+                raise Exception("Unknown IP format")
 
         print(f"Fetching IP whois from {self._whois.name}")
         self._fetch_whois()

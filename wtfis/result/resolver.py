@@ -21,7 +21,8 @@ class Resolver:
     __is_target_ip: bool
 
     def __init__(self, target: str, config: Config) -> None:
-        self.handler = self.__generate_entity_handler(target=target, config=config)
+        self.handler = self.__generate_entity_handler(
+            target=target, config=config)
 
     def __generate_entity_handler(self, target: str, config: Config) -> BaseHandler:
 
@@ -46,7 +47,7 @@ class Resolver:
             whois_client: Union[PTClient, Ip2WhoisClient, VTClient] = (
                 PTClient(config.pt_api_user, config.pt_api_key)
             )
-        elif config.ip2whois_api_key and not is_ip(target):
+        elif config.ip2whois_api_key and not self.__is_target_ip:
             whois_client = Ip2WhoisClient(config.ip2whois_api_key)
         else:
             whois_client = vt_client

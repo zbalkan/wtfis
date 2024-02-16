@@ -36,7 +36,7 @@ def parse_env() -> None:
 def main() -> None:
 
     # Pass the IP address
-    target:str = "142.171.193.6"
+    target: str = "118.43.68.218"
     # target: str = "indyjoy.com"
     # Load environment variables
     parse_env()
