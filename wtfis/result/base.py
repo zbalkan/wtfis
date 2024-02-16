@@ -24,11 +24,13 @@ class BaseResult():
         whois: Optional[WhoisBase],
         ip_enrich: Union[IpWhoisMap, ShodanIpMap],
         greynoise: GreynoiseIpMap,
+        warnings: list[str]
     ) -> None:
         self.entity = entity
         self.whois = whois
         self.ip_enrich = ip_enrich
         self.greynoise = greynoise
+        self.warnings = warnings
 
     def _vendors_who_flagged_malicious(self) -> list[str]:
         vendors = []
@@ -45,7 +47,7 @@ class BaseResult():
         # Total count
         total = stats.harmless + stats.malicious + stats.suspicious + stats.timeout + stats.undetected
 
-        stats_dict:dict ={}
+        stats_dict: dict = {}
         stats_dict["vendors_who_flagged_malicious"] = f"{stats.malicious}/{total}"
 
         # Include list of vendors that flagged malicious
@@ -58,7 +60,7 @@ class BaseResult():
         if len(popularity_ranks.root) == 0:
             return None
 
-        pop:dict = { }
+        pop: dict = {}
         for source, popularity in popularity_ranks.root.items():
             pop["source"] = source
             pop["rank"] = popularity.rank
@@ -70,7 +72,7 @@ class BaseResult():
 
         # Styling for port/transport list
         def ports_stylized(ports: list) -> list[str]:
-            temp:list[str] = []
+            temp: list[str] = []
             for port in ports:
                 temp.append(f"{port.port}/{port.transport}")
             return temp
@@ -78,7 +80,7 @@ class BaseResult():
         # Grouped list
         grouped = ip.group_ports_by_product()
 
-        services:dict = {}
+        services: dict = {}
 
         # Return a simple port list if no identified ports
         if (
@@ -97,7 +99,7 @@ class BaseResult():
 
     def _gen_greynoise_details(self, ip: GreynoiseIp) -> dict:
 
-        greynoise :dict = {}
+        greynoise: dict = {}
         greynoise["hyperlink"] = ip.link
         greynoise["riot"] = ip.riot
         greynoise["noise"] = ip.noise
@@ -128,7 +130,7 @@ class BaseResult():
         attributes = self.entity.data.attributes
         baseurl = self.vt_gui_baseurl_ip if is_ip(self.entity.data.id_) else self.vt_gui_baseurl_domain
 
-        vt:dict = { }
+        vt: dict = {}
         # Analysis (IP and domain)
         analysis = self._gen_vt_analysis_stats(
             attributes.last_analysis_stats,
@@ -169,14 +171,14 @@ class BaseResult():
         if enrich is None:
             return None
         else:
-            enrichment:dict = {}
+            enrichment: dict = {}
 
             if isinstance(enrich, IpWhois):
                 # IPWhois
                 enrichment["source"] = "IPwhois"
                 asn = self._gen_asn_text(enrich.connection.asn, enrich.connection.org)
-                enrichment["asn"]=asn
-                enrichment["isp"]=enrich.connection.isp
+                enrichment["asn"] = asn
+                enrichment["isp"] = enrich.connection.isp
                 enrichment["location"] = ", ".join([enrich.city, enrich.region, enrich.country])
 
             else:
@@ -186,7 +188,7 @@ class BaseResult():
                 enrichment["asn"] = asn
                 enrichment["isp"] = enrich.isp
 
-                location:str = enrich.country_name
+                location: str = enrich.country_name
 
                 if enrich.region_name:
                     location = enrich.region_name + ", " + location
@@ -213,13 +215,13 @@ class BaseResult():
         # Greynoise
         greynoise = self._get_greynoise_enrichment(self.entity.data.id_)
         if greynoise:
-            other:dict = {}
-            other["other"]=(self._gen_greynoise_details(greynoise))
+            other: dict = {}
+            other["other"] = (self._gen_greynoise_details(greynoise))
             return other
 
         return None  # No other data
 
-    def whois_panel(self) -> Optional[dict]:
+    def whois_section(self) -> Optional[dict]:
         # Do nothing if no whois
         if self.whois is None:
             return None
@@ -234,7 +236,6 @@ class BaseResult():
         if domain:
             whois["domain"] = self.whois.domain
             whois["hyperlink"] = hyperlink
-
 
         org = self.whois.organization
         if org:
@@ -254,3 +255,6 @@ class BaseResult():
         whois["expires"] = self.whois.date_expires
 
         return whois
+
+    def warnings_section(self) -> Optional[list[str]]:
+        return self.warnings

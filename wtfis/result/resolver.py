@@ -16,12 +16,12 @@ from wtfis.utils import is_ip
 
 
 class Resolver:
-    entity: BaseHandler
+    handler: BaseHandler
 
     __is_target_ip: bool
 
     def __init__(self, target: str, config: Config) -> None:
-        self.entity = self.__generate_entity_handler(target=target, config=config)
+        self.handler = self.__generate_entity_handler(target=target, config=config)
 
     def __generate_entity_handler(self, target: str, config: Config) -> BaseHandler:
 
@@ -60,7 +60,7 @@ class Resolver:
 
         if self.__is_target_ip:
             # IP address handler
-            entity = IpAddressHandler(
+            handler = IpAddressHandler(
                 entity=target,
                 vt_client=vt_client,
                 ip_enricher_client=enricher_client,
@@ -69,7 +69,7 @@ class Resolver:
             )
         else:
             # Domain / FQDN handler
-            entity: BaseHandler = DomainHandler(
+            handler: BaseHandler = DomainHandler(
                 entity=target,
                 vt_client=vt_client,
                 ip_enricher_client=enricher_client,
@@ -77,25 +77,27 @@ class Resolver:
                 greynoise_client=greynoise_client
             )
 
-        return entity
+        return handler
 
     def fetch(self) -> None:
         '''Initiates queries to configured APIs'''
-        self.entity.fetch_data()
+        self.handler.fetch_data()
 
     def export(self) -> str:
         '''Exports the resolved data as a JSON string'''
 
         if self.__is_target_ip:
             return str(IpAddressResult(
-               entity=self.entity.vt_info,  # type: ignore
-               whois=self.entity.whois,
-               ip_enrich=self.entity.ip_enrich,
-               greynoise=self.entity.greynoise))  # type: ignore
+               entity=self.handler.vt_info,  # type: ignore
+               whois=self.handler.whois,
+               ip_enrich=self.handler.ip_enrich,
+               greynoise=self.handler.greynoise,
+               warnings=self.handler.warnings))  # type: ignore
         else:
             return str(DomainResult(
-                entity=self.entity.vt_info,  # type: ignore
-                resolutions=self.entity.resolutions,  # type: ignore
-                whois=self.entity.whois,
-                ip_enrich=self.entity.ip_enrich,
-                greynoise=self.entity.greynoise))  # type: ignore
+                entity=self.handler.vt_info,  # type: ignore
+                resolutions=self.handler.resolutions,  # type: ignore
+                whois=self.handler.whois,
+                ip_enrich=self.handler.ip_enrich,
+                greynoise=self.handler.greynoise,
+                warnings=self.handler.warnings))  # type: ignore

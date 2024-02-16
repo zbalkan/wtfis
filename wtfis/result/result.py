@@ -14,33 +14,35 @@ class DomainResult(BaseResult):
     """
     Handler for FQDN and domain lookup output
     """
+
     def __init__(
         self,
         entity: Domain,
         resolutions: Optional[Resolutions],
         whois: WhoisBase,
         ip_enrich: Union[IpWhoisMap, ShodanIpMap],
-        greynoise: GreynoiseIpMap
-        ) -> None:
-        super().__init__( entity, whois, ip_enrich, greynoise)
+        greynoise: GreynoiseIpMap,
+        warnings: list[str]
+    ) -> None:
+        super().__init__(entity, whois, ip_enrich, greynoise, warnings)
         self.resolutions = resolutions
 
-    def domain_panel(self) -> dict:
+    def domain_section(self) -> dict:
         return self._gen_vt_response()
 
-    def resolutions_panel(self) -> Optional[dict]:
+    def resolutions_section(self) -> Optional[dict]:
         # Skip if no resolutions data
         if not self.resolutions:
             return None
 
-        resolutions:dict = {}
+        resolutions: dict = {}
         resolutions["resolution_count"] = self.resolutions.meta.count
         resolutions["resolutions_link"] = f"{self.vt_gui_baseurl_domain}/{self.entity.data.id_}/relations"
         resolutions["resolution"] = []
 
         for _, ip in enumerate(self.resolutions.data):
 
-            resolution:dict = {}
+            resolution: dict = {}
             attributes = ip.attributes
 
             # Analysis
@@ -51,7 +53,6 @@ class DomainResult(BaseResult):
             # Content
             resolution["resolved_ip"] = attributes.ip_address
             resolution["resolved"] = datetime.fromtimestamp(attributes.date).isoformat()
-
 
             # IP Enrichment
             enrich = self._get_ip_enrichment(attributes.ip_address)
@@ -71,7 +72,7 @@ class DomainResult(BaseResult):
                     resolution["asn"] = asn
                     resolution["isp"] = enrich.isp
 
-                    location:str = enrich.country_name
+                    location: str = enrich.country_name
 
                     if enrich.region_name:
                         location = enrich.region_name + ", " + location
@@ -104,7 +105,11 @@ class DomainResult(BaseResult):
 
     def __str__(self) -> str:
         return json.dumps(
-            { "whois": self.whois_panel(), "domain":self.domain_panel(), "resolutions": self.resolutions_panel() },
+            {
+                "whois": self.whois_section(),
+                "domain": self.domain_section(),
+                "resolutions": self.resolutions_section(),
+                "warnings": self.warnings_section()},
             indent=4,
             sort_keys=True)
 
@@ -113,18 +118,20 @@ class IpAddressResult(BaseResult):
     """
     Handler for IP Address lookup output
     """
+
     def __init__(
         self,
         entity: IpAddress,
         whois: WhoisBase,
         ip_enrich: Union[IpWhoisMap, ShodanIpMap],
         greynoise: GreynoiseIpMap,
+        warnings: list[str]
     ) -> None:
-        super().__init__(entity, whois, ip_enrich, greynoise)
+        super().__init__(entity, whois, ip_enrich, greynoise, warnings)
 
-    def ip_panel(self) -> dict:
+    def ip_section(self) -> dict:
 
-        ip:dict = {}
+        ip: dict = {}
         # Virustotal section
         vt_section = self._gen_vt_response()
         ip["virustotal"] = vt_section
@@ -144,6 +151,9 @@ class IpAddressResult(BaseResult):
 
     def __str__(self) -> str:
         return json.dumps(
-            { "whois": self.whois_panel(), "ip": self.ip_panel() },
+            {
+                "whois": self.whois_section(),
+                "ip": self.ip_section(),
+                "warnings": self.warnings_section()},
             indent=4,
             sort_keys=True)
