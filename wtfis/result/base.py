@@ -239,6 +239,9 @@ class BaseResult():
         if self.whois.organization:
             whois["org"] = self.whois.organization
 
+        if self.whois.name_servers:
+            whois["nameservers"] = self.whois.name_servers
+
         whois["registrar"] = self.whois.registrar
         whois["name"] = self.whois.name
         whois["email"] = self.whois.email
@@ -246,7 +249,6 @@ class BaseResult():
         whois["street"] = self.whois.street
         whois["country"] = self.whois.country
         whois["postcode"] = self.whois.postal_code
-        whois["nameservers"] = self.whois.name_servers
         whois["dnssec"] = self.whois.dnssec
         whois["registered"] = self.whois.date_created
         whois["updated"] = self.whois.date_changed
