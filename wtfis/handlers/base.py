@@ -66,9 +66,9 @@ class BaseHandler(abc.ABC):
         self._greynoise = greynoise_client
 
         # Dataset containers
-        self.vt_info:   Union[Domain, IpAddress]
+        self.vt_info: Union[Domain, IpAddress]
         self.ip_enrich: Union[IpWhoisMap, ShodanIpMap] = IpWhoisMap.empty()
-        self.whois:     WhoisBase
+        self.whois: WhoisBase
         self.greynoise: GreynoiseIpMap = GreynoiseIpMap.empty()
 
         # Warning messages container

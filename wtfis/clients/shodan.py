@@ -11,6 +11,7 @@ class ShodanClient(BaseClient, BaseIpEnricherClient):
     """
     Shodan client
     """
+
     def __init__(self, api_key: str) -> None:
         self.s = Shodan(api_key)
 

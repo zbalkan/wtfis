@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, RootModel
 from typing import Dict
+
+from pydantic import BaseModel, Field, RootModel
 
 from wtfis.models.common import LaxStr
 

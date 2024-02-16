@@ -1,6 +1,7 @@
 from collections import defaultdict, namedtuple
-from pydantic import BaseModel, RootModel
 from typing import Dict, List, Optional
+
+from pydantic import BaseModel, RootModel
 
 from wtfis.models.common import LaxStr
 

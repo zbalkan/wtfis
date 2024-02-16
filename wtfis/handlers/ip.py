@@ -22,4 +22,3 @@ class IpAddressHandler(BaseHandler):
 
         print(f"Fetching IP whois from {self._whois.name}")
         self._fetch_whois()
-

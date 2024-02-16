@@ -1,9 +1,9 @@
 import abc
 import sys
+from typing import List, Optional
 
 from pydantic import BaseModel, BeforeValidator
 from pydantic.v1.validators import str_validator
-from typing import List, Optional
 
 if sys.version_info >= (3, 9):
     from typing import Annotated

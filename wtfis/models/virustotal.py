@@ -116,6 +116,7 @@ class Resolutions(BaseModel):
     meta: Meta
     data: list[ResolutionData]
 
+
 class Whois(WhoisBase):
     source: str = "virustotal"
     domain: str = Field("", alias="Domain Name")
@@ -135,7 +136,7 @@ class Whois(WhoisBase):
     date_expires: Optional[str] = None
     dnssec: Optional[str] = Field(None, alias="DNSSEC")
 
-    @model_validator(mode="before") # type: ignore
+    @model_validator(mode="before")  # type: ignore
     @classmethod
     def get_latest_whois_record_and_transform(cls, v):
         data = v.pop("data")

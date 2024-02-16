@@ -1,5 +1,6 @@
-from pydantic import Field, model_validator
 from typing import List, Optional
+
+from pydantic import Field, model_validator
 
 from wtfis.models.common import WhoisBase
 
@@ -22,7 +23,7 @@ class Whois(WhoisBase):
     date_expires: Optional[str] = Field(None, alias="expiresAt")
     dnssec: Optional[str] = None
 
-    @model_validator(mode="before")
+    @model_validator(mode="before")  # type: ignore
     @classmethod
     def extract_registrant(cls, v):
         registrant = v.pop("registrant")

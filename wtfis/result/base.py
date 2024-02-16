@@ -229,17 +229,15 @@ class BaseResult():
         whois: dict = {}
         if self.whois.source == "passivetotal":  # PT
             hyperlink = f"{self.pt_gui_baseurl}/{self.whois.domain}/whois"
+            whois["hyperlink"] = hyperlink
         else:  # VT
             hyperlink = None
 
-        domain = self.whois.domain
-        if domain:
+        if self.whois.domain:
             whois["domain"] = self.whois.domain
-            whois["hyperlink"] = hyperlink
 
-        org = self.whois.organization
-        if org:
-            whois["org"] = org
+        if self.whois.organization:
+            whois["org"] = self.whois.organization
 
         whois["registrar"] = self.whois.registrar
         whois["name"] = self.whois.name

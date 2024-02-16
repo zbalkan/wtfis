@@ -1,5 +1,6 @@
-from pydantic import Field, field_validator, model_validator
 from typing import List, Optional
+
+from pydantic import Field, field_validator, model_validator
 
 from wtfis.models.common import WhoisBase
 
@@ -24,7 +25,7 @@ class Whois(WhoisBase):
     whois_server: Optional[str] = None
     dnssec: Optional[str] = None
 
-    @model_validator(mode="before")
+    @model_validator(mode="before")  # type: ignore
     @classmethod
     def extract_registrant(cls, v):
         """ Surface registrant fields to root level """

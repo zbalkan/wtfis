@@ -5,25 +5,15 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Union
 
 from dotenv import load_dotenv
 
-from wtfis.clients.greynoise import GreynoiseClient
-from wtfis.clients.ip2whois import Ip2WhoisClient
-from wtfis.clients.ipwhois import IpWhoisClient
-from wtfis.clients.passivetotal import PTClient
-from wtfis.clients.shodan import ShodanClient
-from wtfis.clients.virustotal import VTClient
 from wtfis.config import Config
-from wtfis.handlers.base import BaseHandler
-from wtfis.handlers.domain import DomainHandler
-from wtfis.handlers.ip import IpAddressHandler
 from wtfis.result.resolver import Resolver
-from wtfis.utils import error_and_exit, is_ip
+from wtfis.utils import error_and_exit
 
 APP_NAME: str = 'wtfis'
-APP_VERSION: str = '0.1'
+APP_VERSION: str = '0.7.1'
 
 
 def parse_env() -> None:
