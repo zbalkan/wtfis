@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 from wtfis.internal.config import Config
 from wtfis.internal.resolver import Resolver
-from wtfis.internal.utils import error_and_exit
+from wtfis.internal.utils import error_and_exit, is_private
 
 try:
     import diskcache
@@ -79,7 +79,14 @@ def main() -> None:
 
     # Pass the IP address
     # target: str = "118.43.68.218"
-    target: str = "trivat.fun"
+    # target: str = "trivat.fun"
+    target: str = "192.168.0.25"
+
+    # Check if private IP or not
+    if is_private(target=target):
+        logging.info(f"The target IP is in private range: {target}")
+        return
+
     # Load environment variables
     parse_env()
 
