@@ -70,7 +70,17 @@ class DomainResult(BaseResult):
 
                     resolution["asn"] = asn
                     resolution["isp"] = enrich.isp
-                    resolution["location"] = ", ".join([enrich.city, enrich.region_name, enrich.country_name]) # type: ignore
+
+                    location:str = enrich.country_name
+
+                    if enrich.region_name:
+                        location = enrich.region_name + ", " + location
+
+                    if enrich.city:
+                        location = enrich.city + ", " + location
+
+                    resolution["location"] = location
+
                     resolution["os"] = enrich.os if enrich.os is not None else "Unknown"
                     services = self._gen_shodan_services(enrich)
                     if services:
@@ -93,11 +103,10 @@ class DomainResult(BaseResult):
         return resolutions
 
     def __str__(self) -> str:
-        d :dict = {}
-        d["whois"] = self.whois_panel()
-        d["domain"] = self.domain_panel()
-        d["resolutions"] = self.resolutions_panel()
-        return json.dumps(d)
+        return json.dumps(
+            { "whois": self.whois_panel(), "domain":self.domain_panel(), "resolutions": self.resolutions_panel() },
+            indent=4,
+            sort_keys=True)
 
 
 class IpAddressResult(BaseResult):
@@ -134,4 +143,7 @@ class IpAddressResult(BaseResult):
         return ip
 
     def __str__(self) -> str:
-        return json.dumps({ "whois": self.whois_panel(), "ip": self.ip_panel() })
+        return json.dumps(
+            { "whois": self.whois_panel(), "ip": self.ip_panel() },
+            indent=4,
+            sort_keys=True)
