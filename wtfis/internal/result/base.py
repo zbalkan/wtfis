@@ -218,11 +218,15 @@ class BaseResult():
 
     def _gen_ip_other_response(self) -> Optional[dict]:
         """ Other section for IP views """
+
+        other: dict = {}
+
         # Greynoise
-        greynoise = self._get_greynoise_enrichment(self.entity.data.id_)
+        greynoise: Optional[GreynoiseIp] = self._get_greynoise_enrichment(
+            self.entity.data.id_)
         if greynoise:
-            other: dict = {}
-            other["other"] = (self._gen_greynoise_details(greynoise))
+            other["greynoise_enrichment"] = (
+                self._gen_greynoise_details(greynoise))
             return other
 
         return None  # No other data

@@ -86,7 +86,8 @@ def main() -> None:
     # Pass the IP address
     # target: str = "118.43.68.218"
     # target: str = "trivat.fun"
-    target: str = "192.168.0.25"
+    # target: str = "192.168.0.25"
+    target: str = "185.56.83.82"
 
     # Load environment variables
     parse_env()
