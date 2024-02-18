@@ -116,7 +116,8 @@ class DomainResult(BaseResult):
                 "resolutions": self.resolutions_section(),
                 "warnings": self.warnings_section()},
             indent=4,
-            sort_keys=True)
+            sort_keys=True,
+            ensure_ascii=False).encode('utf8').decode()
 
 
 class IpAddressResult(BaseResult):
@@ -161,4 +162,5 @@ class IpAddressResult(BaseResult):
                 "ip": self.ip_section(),
                 "warnings": self.warnings_section()},
             indent=4,
-            sort_keys=True)
+            sort_keys=True,
+            ensure_ascii=False).encode('utf8').decode()
