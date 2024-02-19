@@ -10,4 +10,3 @@ requests==2.31.0
 shodan==1.29.1
 typing_extensions==4.9.0
 urllib3==2.2.0
--e git+https://github.com/zbalkan/wtfis.git@e55eb16c63e8aaa34219db36351175b333ec3730#egg=wtfis
