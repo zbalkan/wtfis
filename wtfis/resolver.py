@@ -6,7 +6,7 @@ from wtfis.internal.clients.ipwhois import IpWhoisClient
 from wtfis.internal.clients.passivetotal import PTClient
 from wtfis.internal.clients.shodan import ShodanClient
 from wtfis.internal.clients.virustotal import VTClient
-from wtfis.internal.config import Config
+from wtfis.config import Config
 from wtfis.internal.handlers.base import BaseHandler
 from wtfis.internal.handlers.domain import DomainHandler
 from wtfis.internal.handlers.ip import IpAddressHandler

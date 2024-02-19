@@ -9,9 +9,9 @@ from typing import Optional
 
 from dotenv import load_dotenv
 
-from wtfis.internal.config import Config
-from wtfis.internal.resolver import Resolver
+from wtfis.config import Config
 from wtfis.internal.utils import error_and_exit, is_private
+from wtfis.resolver import Resolver
 
 try:
     import diskcache
