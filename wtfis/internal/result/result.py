@@ -66,8 +66,15 @@ class DomainResult(BaseResult):
                         enrich.connection.asn, enrich.connection.org)
                     resolution["asn"] = asn
                     resolution["isp"] = enrich.connection.isp
-                    resolution["location"] = ", ".join(
-                        [enrich.city, enrich.region, enrich.country])
+                    location: str = enrich.country
+
+                    if enrich.region:
+                        location = enrich.region + ", " + location
+
+                    if enrich.city:
+                        location = enrich.city + ", " + location
+
+                    resolution["location"] = location
                 else:
                     # Shodan
                     asn = self._gen_asn_text(enrich.asn, enrich.org)
@@ -110,11 +117,11 @@ class DomainResult(BaseResult):
 
     def __str__(self) -> str:
         return json.dumps(
-            {
+            {"wtfis": {
                 "whois": self.whois_section(),
                 "domain": self.domain_section(),
                 "resolutions": self.resolutions_section(),
-                "warnings": self.warnings_section()},
+                "warnings": self.warnings_section()}},
             indent=4,
             sort_keys=True,
             ensure_ascii=False).encode('utf8').decode()
@@ -156,11 +163,13 @@ class IpAddressResult(BaseResult):
         return ip
 
     def __str__(self) -> str:
+        temp: dict = {"wtfis": {
+            "whois": self.whois_section(),
+            "ip": self.ip_section(),
+            "warnings": self.warnings_section()}}
+
         return json.dumps(
-            {
-                "whois": self.whois_section(),
-                "ip": self.ip_section(),
-                "warnings": self.warnings_section()},
+            temp,
             indent=4,
             sort_keys=True,
             ensure_ascii=False).encode('utf8').decode()

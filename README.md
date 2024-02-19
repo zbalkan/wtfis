@@ -137,64 +137,66 @@ Sample response for target IP address 185.56.83.82:
 
 ```json
 {
-    "ip": {
-        "enrichment": {
-            "asn": "AS211720 (Datashield, Inc.)",
-            "isp": "Datashield, Inc.",
-            "last_scan": "2024-01-22T22:31:01.667263+00:00",
-            "location": "Zürich, Switzerland",
-            "os": "Unknown",
-            "services": {
-                "ports": [
-                    "443/tcp"
-                ]
+    "wtfis": {
+        "ip": {
+            "enrichment": {
+                "asn": "AS211720 (Datashield, Inc.)",
+                "isp": "Datashield, Inc.",
+                "last_scan": "2024-01-22T22:31:01.667263+00:00",
+                "location": "Zürich, Switzerland",
+                "os": "Unknown",
+                "services": {
+                    "ports": [
+                        "443/tcp"
+                    ]
+                },
+                "shodan_link": "https://www.shodan.io/host/185.56.83.82",
+                "source": "Shodan"
             },
-            "shodan_link": "https://www.shodan.io/host/185.56.83.82",
-            "source": "Shodan"
-        },
-        "other": {
-            "greynoise_enrichment": {
-                "classification": "unknown",
-                "hyperlink": "https://viz.greynoise.io/ip/185.56.83.82",
-                "noise": true,
-                "riot": false
+            "other": {
+                "greynoise_enrichment": {
+                    "classification": "unknown",
+                    "hyperlink": "https://viz.greynoise.io/ip/185.56.83.82",
+                    "noise": true,
+                    "riot": false
+                }
+            },
+            "virustotal": {
+                "analysis": {
+                    "vendors": [
+                        "Antiy-AVL",
+                        "BitDefender",
+                        "Fortinet",
+                        "G-Data",
+                        "Lionic",
+                        "MalwareURL",
+                        "SOCRadar",
+                        "Webroot"
+                    ],
+                    "vendors_who_flagged_malicious": "8/90"
+                },
+                "hyperlink": "https://virustotal.com/gui/ip-address/185.56.83.82",
+                "reputation": -1,
+                "updated": "2024-02-19T13:53:32"
             }
         },
-        "virustotal": {
-            "analysis": {
-                "vendors": [
-                    "Antiy-AVL",
-                    "BitDefender",
-                    "Fortinet",
-                    "G-Data",
-                    "Lionic",
-                    "MalwareURL",
-                    "SOCRadar",
-                    "Webroot"
-                ],
-                "vendors_who_flagged_malicious": "8/90"
-            },
-            "hyperlink": "https://virustotal.com/gui/ip-address/185.56.83.82",
-            "reputation": -1,
-            "updated": "2024-02-19T03:47:52"
+        "warnings": [],
+        "whois": {
+            "country": null,
+            "dnssec": null,
+            "domain": "185.56.83.0",
+            "email": "abuse@xor.sc",
+            "expires": null,
+            "hyperlink": "https://community.riskiq.com/search/185.56.83.0/whois",
+            "name": "DATASHIELD-MNT",
+            "org": "DATASHIELD-MNT",
+            "phone": null,
+            "postcode": null,
+            "registered": "2021-02-27T00:41:04.000-08:00",
+            "registrar": "RIPE",
+            "street": null,
+            "updated": "2021-03-30T14:36:49.000-07:00"
         }
-    },
-    "warnings": [],
-    "whois": {
-        "country": null,
-        "dnssec": null,
-        "domain": "185.56.83.0",
-        "email": "abuse@xor.sc",
-        "expires": null,
-        "hyperlink": "https://community.riskiq.com/search/185.56.83.0/whois",
-        "name": "DATASHIELD-MNT",
-        "org": "DATASHIELD-MNT",
-        "phone": null,
-        "postcode": null,
-        "registered": "2021-02-27T00:41:04.000-08:00",
-        "registrar": "RIPE",
-        "street": null,
-        "updated": "2021-03-30T14:36:49.000-07:00"
     }
 }
 ```
