@@ -77,7 +77,7 @@ def query_with_cache(target: str, config: Config, cache_dir: str = './') -> Opti
 
             if export:
                 logging.debug("Adding the response to cache")
-                cache.add(target, cache_result)
+                cache.add(target, json.dumps(export, sort_keys=True))
 
                 return export
             else:
@@ -109,6 +109,10 @@ def main() -> None:
         target=target, config=config, cache_dir=get_root_dir())
 
     if result:
+
+        # We can add custom fields at this point
+        result["wtfis"]["triggered_by"] = "triggering action"
+
         json_str: str = json.dumps(result,
                                    indent=4,
                                    sort_keys=True,
