@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import json
 import logging
 import os
 import sys
@@ -41,7 +42,7 @@ def parse_env() -> None:
             error_and_exit(error)
 
 
-def query_with_cache(target: str, config: Config, cache_dir: str = './') -> Optional[str]:
+def query_with_cache(target: str, config: Config, cache_dir: str = './') -> Optional[dict]:
 
     # Check if private IP or not
     if is_private(target=target):
@@ -57,10 +58,11 @@ def query_with_cache(target: str, config: Config, cache_dir: str = './') -> Opti
         cache.expire()
 
         logging.debug("Checking cache")
-        result: Optional[str] = cache.get(target)  # type: ignore
+        cache_result: Optional[str] = cache.get(target)  # type: ignore
 
-        if result:
+        if cache_result:
             logging.debug("Found the value in cache")
+            return dict(json.loads(cache_result))
         else:
             logging.debug("Cache miss. Querying APIs...")
 
@@ -71,14 +73,15 @@ def query_with_cache(target: str, config: Config, cache_dir: str = './') -> Opti
             resolver.fetch()
 
             # Get result
-            result = resolver.export()
+            export = resolver.export()
 
-            if result:
+            if export:
                 logging.debug("Adding the response to cache")
-                cache.add(target, result)
+                cache.add(target, cache_result)
+
+                return export
             else:
-                result = "No result"
-        return result
+                return None
 
 
 def main() -> None:
@@ -87,7 +90,7 @@ def main() -> None:
     # target: str = "118.43.68.218"
     # target: str = "trivat.fun"
     # target: str = "192.168.0.25"
-    target: str = "185.56.83.82"
+    target: str = "23.94.92.24"
 
     # Load environment variables
     parse_env()
@@ -102,12 +105,16 @@ def main() -> None:
         greynoise_api_key=os.environ.get("GREYNOISE_API_KEY"))
 
     logging.info("Querying..")
-    result: Optional[str] = query_with_cache(
+    result: Optional[dict] = query_with_cache(
         target=target, config=config, cache_dir=get_root_dir())
 
     if result:
+        json_str: str = json.dumps(result,
+                                   indent=4,
+                                   sort_keys=True,
+                                   ensure_ascii=False).encode('utf8').decode()
         logging.info("Result found. Printing the result...")
-        print(result)
+        print(json_str)
     else:
         logging.info("No result found. Invalid address or private IP range")
         print("No response")

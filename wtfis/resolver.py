@@ -1,4 +1,5 @@
-from typing import Optional, Union
+from typing import Any, Optional, Union
+import json
 
 from wtfis.internal.clients.greynoise import GreynoiseClient
 from wtfis.internal.clients.ip2whois import Ip2WhoisClient
@@ -83,21 +84,24 @@ class Resolver:
         '''Initiates queries to configured APIs'''
         self.handler.fetch_data()
 
-    def export(self) -> str:
+    def export(self) -> dict:
         '''Exports the resolved data as a JSON string'''
 
+        result: Union[IpAddressResult, DomainResult]
         if self.__is_target_ip:
-            return str(IpAddressResult(
+            result = IpAddressResult(
                entity=self.handler.vt_info,  # type: ignore
                whois=self.handler.whois,
                ip_enrich=self.handler.ip_enrich,
                greynoise=self.handler.greynoise,
-               warnings=self.handler.warnings))  # type: ignore
+               warnings=self.handler.warnings)
         else:
-            return str(DomainResult(
+            result = DomainResult(
                 entity=self.handler.vt_info,  # type: ignore
                 resolutions=self.handler.resolutions,  # type: ignore
                 whois=self.handler.whois,
                 ip_enrich=self.handler.ip_enrich,
                 greynoise=self.handler.greynoise,
-                warnings=self.handler.warnings))  # type: ignore
+                warnings=self.handler.warnings)  # type: ignore
+
+        return result.as_dict()

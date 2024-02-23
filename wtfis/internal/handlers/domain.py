@@ -47,19 +47,15 @@ class DomainHandler(BaseHandler):
                 raise
 
     def fetch_data(self) -> None:
-        print("Fetching data from Virustotal")
         self._fetch_vt_domain()
         self._fetch_vt_resolutions()
 
         if self.resolutions and self.resolutions.data:
-            print(f"Fetching IP enrichments from {self._enricher.name}")
             self._fetch_ip_enrichments(
                 [rd.attributes.ip_address for rd in self.resolutions.data])
 
             if self._greynoise:
-                print(f"Fetching IP enrichments from {self._greynoise.name}")
                 self._fetch_greynoise(
                     [rd.attributes.ip_address for rd in self.resolutions.data])
 
-        print(f"Fetching domain whois from {self._whois.name}")
         self._fetch_whois()

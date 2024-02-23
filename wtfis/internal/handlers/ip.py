@@ -10,10 +10,8 @@ class IpAddressHandler(BaseHandler):
         self.vt_info = self._vt.get_ip_address(self.entity)
 
     def fetch_data(self) -> None:
-        print("Fetching data from Virustotal")
         self._fetch_vt_ip_address()
 
-        print(f"Fetching IP enrichments from {self._enricher.name}")
         if isinstance(self.entity, str):
             self._fetch_ip_enrichments([self.entity])
         elif isinstance(self.entity, list):
@@ -22,7 +20,6 @@ class IpAddressHandler(BaseHandler):
             raise Exception("Unknown IP format")
 
         if self._greynoise:
-            print(f"Fetching IP enrichments from {self._greynoise.name}")
             if isinstance(self.entity, str):
                 self._fetch_greynoise([self.entity])
             elif isinstance(self.entity, list):
@@ -30,5 +27,4 @@ class IpAddressHandler(BaseHandler):
             else:
                 raise Exception("Unknown IP format")
 
-        print(f"Fetching IP whois from {self._whois.name}")
         self._fetch_whois()

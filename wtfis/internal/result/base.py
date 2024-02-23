@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Any, Final, Optional, Union
-
+import abc
 from wtfis.internal.models.common import WhoisBase
 from wtfis.internal.models.greynoise import GreynoiseIp, GreynoiseIpMap
 from wtfis.internal.models.ipwhois import IpWhois, IpWhoisMap
@@ -268,3 +268,7 @@ class BaseResult():
 
     def warnings_section(self) -> Optional[list[str]]:
         return self.warnings
+
+    @abc.abstractmethod
+    def as_dict(self) -> dict:  # pragma: no coverage
+        return NotImplemented

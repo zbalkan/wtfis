@@ -115,16 +115,12 @@ class DomainResult(BaseResult):
 
         return resolutions
 
-    def __str__(self) -> str:
-        return json.dumps(
-            {"wtfis": {
+    def as_dict(self) -> dict:
+        return {"wtfis": {
                 "whois": self.whois_section(),
                 "domain": self.domain_section(),
                 "resolutions": self.resolutions_section(),
-                "warnings": self.warnings_section()}},
-            indent=4,
-            sort_keys=True,
-            ensure_ascii=False).encode('utf8').decode()
+                "warnings": self.warnings_section()}}
 
 
 class IpAddressResult(BaseResult):
@@ -162,14 +158,8 @@ class IpAddressResult(BaseResult):
         # Altogether now
         return ip
 
-    def __str__(self) -> str:
-        temp: dict = {"wtfis": {
+    def as_dict(self) -> dict:
+        return {"wtfis": {
             "whois": self.whois_section(),
             "ip": self.ip_section(),
             "warnings": self.warnings_section()}}
-
-        return json.dumps(
-            temp,
-            indent=4,
-            sort_keys=True,
-            ensure_ascii=False).encode('utf8').decode()
