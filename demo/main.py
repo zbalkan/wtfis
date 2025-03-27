@@ -1,55 +1,81 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import json
-import logging
 import os
 import sys
-from pathlib import Path
+import time
+from socket import AF_UNIX, SOCK_DGRAM, socket
 from typing import Optional
 
-from dotenv import load_dotenv
+ENCODING: str = "utf-8"
+CACHE_PATH: str = "/tmp/wtfis"
 
-from wtfis.config import Config
-from wtfis.internal.utils import error_and_exit, is_private
-from wtfis.resolver import Resolver
+
+# Global vars
+debug_enabled = False
+ossec_dir: str = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+json_alert: dict = {}
+now: str = time.strftime("%a %b %d %H:%M:%S %Z %Y")
+
+# Set paths
+log_file = '{0}/logs/integrations.log'.format(ossec_dir)
+socket_addr = '{0}/queue/sockets/queue'.format(ossec_dir)
+
+# Change working directory
+os.chdir('/var/ossec/integrations')
+
+
+def __debug(msg: str) -> None:
+    # if debug_enabled:
+    debug_log: str = f"{now}: {msg}\n"
+    print(debug_log)
+    with open(log_file, "a", encoding=ENCODING) as log_file_stream:
+        log_file_stream.write(debug_log)
+
 
 try:
     import diskcache
-except Exception as e:
-    print("No module 'diskcache' found. Install: pip3 install diskcache")
+except ImportError:
+    __debug("No module 'diskcache' found. Install: pip install diskcache")
     sys.exit(1)
 
-APP_NAME: str = 'wtfis'
-APP_VERSION: str = '0.7.1'
+try:
+    __debug(f"working_dir: {os.getcwd()}")
+    __debug(f"ossec_dir: {ossec_dir}")
+
+    from wtfis.config import Config
+    from wtfis.internal.utils import is_private
+    from wtfis.resolver import Resolver
+except ImportError:
+    __debug("No module 'wtfis' found. Solve the dependency issues first.")
+    sys.exit(1)
 
 
-def parse_env() -> None:
-    DEFAULT_ENV_FILE = Path().home() / ".env.wtfis"
-
-    # Load the file
-    load_dotenv(DEFAULT_ENV_FILE)
-
-    # Exit if required environment variables don't exist
-    for envvar in (
-        "VT_API_KEY",
-    ):
-        if not os.environ.get(envvar):
-            error = f"Error: Environment variable {envvar} not set"
-            if not DEFAULT_ENV_FILE.exists():
-                error = error + \
-                    f"\nEnv file {DEFAULT_ENV_FILE} was not found either. Did you forget?"
-            error_and_exit(error)
+def __send_event(msg: str, agent: Optional[dict] = None) -> None:
+    if not agent or agent["id"] == "000":
+        string = '1:wtfis:{0}'.format(msg)
+    else:
+        string = '1:[{0}] ({1}) {2}->wtfis:{3}'.format(agent["id"], agent["name"],
+                                                       agent["ip"] if "ip" in agent else "any", msg)
+    __debug(string)
+    sock = socket(AF_UNIX, SOCK_DGRAM)
+    sock.connect(socket_addr)
+    sock.send(string.encode())
+    sock.close()
 
 
-def query_with_cache(target: str, config: Config, cache_dir: str = './') -> Optional[dict]:
+def __query_with_cache(target: str, config: Config, cache_dir: str = './') -> Optional[dict]:
 
     # Check if private IP or not
     if is_private(target=target):
-        logging.info(f"The target IP is in private range: {target}")
+        __debug(f"The target IP is in private range: {target}")
         return None
 
-    logging.debug("Opening cache")
+    # Create path for cache if not exists
+    if os.path.exists(cache_dir) is False:
+        os.makedirs(cache_dir, 0o700)
+
+    __debug("Opening cache")
     with diskcache.Cache(directory=cache_dir) as cache:
 
         # Enable stats if not enabled on the first run
@@ -57,14 +83,15 @@ def query_with_cache(target: str, config: Config, cache_dir: str = './') -> Opti
         # Expire old items first
         cache.expire()
 
-        logging.debug("Checking cache")
+        __debug("Checking cache")
         cache_result: Optional[str] = cache.get(target)  # type: ignore
 
         if cache_result:
-            logging.debug("Found the value in cache")
+            __debug("Found the value in cache")
             return dict(json.loads(cache_result))
+
         else:
-            logging.debug("Cache miss. Querying APIs...")
+            __debug("Cache miss. Querying APIs...")
 
             # Initiate resolver
             resolver = Resolver(target, config)
@@ -76,88 +103,117 @@ def query_with_cache(target: str, config: Config, cache_dir: str = './') -> Opti
             export = resolver.export()
 
             if export:
-                logging.debug("Adding the response to cache")
+                __debug("Adding the response to cache")
                 cache.add(target, json.dumps(export, sort_keys=True))
-
-                return export
             else:
                 return None
 
 
-def main() -> None:
+def __parse_api_keys(apikeys: str) -> dict[str, tuple[str, str]]:
+    ''' Parse single line API keys variable into a dict per provider'''
+    keys: list[str] = apikeys.split('|')
+    key_store: dict[str, tuple[str, str]] = {}
+    for k in keys:
+        values: list[str] = k.split(':')
+        provider: str = values[0]
+        user: str = values[1]
+        apikey: str = values[2]
+        key_store[provider] = user, apikey
+    return key_store
 
-    # Pass the IP address
-    # target: str = "118.43.68.218"
-    # target: str = "trivat.fun"
-    # target: str = "192.168.0.25"
-    target: str = "23.94.92.24"
 
-    # Load environment variables
-    parse_env()
+def main(args) -> None:
+    __debug("# Starting")
+    # Read args
+    alert_file_location = args[1]
+    api_keys = str(args[2])
+    __debug(
+        "# API Keys: the format is <provider 1>:<user>:<api key>|<provider 2>:<user>:<api key>")
+    __debug("# The user field can be empty but should not be skipped.")
+    __debug(api_keys)
 
-    # Populate configuration
-    config: Config = Config(
-        vt_api_key=os.environ["VT_API_KEY"],
-        shodan_api_key=os.environ.get("SHODAN_API_KEY"),
-        pt_api_user=os.environ.get("PT_API_USER"),
-        pt_api_key=os.environ.get("PT_API_KEY"),
-        ip2whois_api_key=os.environ.get("IP2WHOIS_API_KEY"),
-        greynoise_api_key=os.environ.get("GREYNOISE_API_KEY"))
+    __debug("# File location")
+    __debug(alert_file_location)
+    # Load alert. Parse JSON object.
+    with open(alert_file_location) as alert_file:
+        json_alert = json.load(alert_file)
+    __debug("# Processing alert")
 
-    logging.info("Querying..")
-    result: Optional[dict] = query_with_cache(
-        target=target, config=config, cache_dir=get_root_dir())
+    __debug(json.dumps(json_alert,
+                       indent=4,
+                       sort_keys=True,
+                       ensure_ascii=False).encode('utf8').decode())
 
-    if result:
+    # We get the data from firewall and it is always Layer 3: IP Address
+    target: str = json_alert["data"]["srcip"]
 
-        # We can add custom fields at this point
-        result["wtfis"]["triggered_by"] = "triggering action"
+    # Fill in the config:
+    key_store: dict[str, tuple[str, str]] = __parse_api_keys(api_keys)
 
-        json_str: str = json.dumps(result,
+    if key_store.get('vt', None) is None:
+        __debug("Virustotal API key does not exist. Exiting...")
+        exit(1)
+
+    config = Config(key_store['vt'][1],
+                    key_store['shodan'][1] if key_store.get(
+                        'shodan') is not None else None,
+                    key_store['pt'][0] if key_store.get(
+                        'pt') is not None else None,
+                    key_store['pt'][1] if key_store.get(
+                        'pt') is not None else None,
+                    key_store['ip2w'][1] if key_store.get(
+                        'ip2w') is not None else None,
+                    key_store['greynoise'][1] if key_store.get('greynoise') is not None else None)
+
+    # Query
+    __debug("# Querying...")
+    response: Optional[dict] = __query_with_cache(target, config, CACHE_PATH)
+
+    # If positive match, send event to Wazuh Manager
+    if response:
+        __debug("# Result found.")
+
+        response["wtfis"]["ip"]["address"] = json_alert["data"]["srcip"]
+        response["wtfis"]["triggered_by"] = json_alert["rule"]["description"]
+
+        json_str: str = json.dumps(response,
                                    indent=4,
                                    sort_keys=True,
                                    ensure_ascii=False).encode('utf8').decode()
-        logging.info("Result found. Printing the result...")
-        print(json_str)
+
+        __send_event(json_str, json_alert["agent"])
+        __debug(json_str)
     else:
-        logging.info("No result found. Invalid address or private IP range")
-        print("No response")
-
-    print("Completed.")
-
-
-def get_root_dir() -> str:
-    if getattr(sys, 'frozen', False):
-        return os.path.dirname(sys.executable)
-    elif __file__:
-        return os.path.dirname(__file__)
-    else:
-        return './'
+        __debug("# No response.")
 
 
 if __name__ == "__main__":
     try:
-        logging.basicConfig(filename=os.path.join(get_root_dir(), f'{APP_NAME}.log'),
-                            encoding='utf-8',
-                            format='%(asctime)s:%(levelname)s:%(message)s',
-                            datefmt="%Y-%m-%dT%H:%M:%S%z",
-                            level=logging.DEBUG)
+        # Read arguments
+        bad_arguments = False
+        if len(sys.argv) >= 4:
+            log_msg = '{0} {1} {2} {3} {4}'.format(
+                now,
+                sys.argv[1],
+                sys.argv[2],
+                sys.argv[3],
+                sys.argv[4] if len(sys.argv) > 4 else ''
+            )
+            debug_enabled = (len(sys.argv) > 4 and sys.argv[4] == 'debug')
+        else:
+            log_msg = '{0} Wrong arguments'.format(now)
+            bad_arguments = True
 
-        excepthook = logging.error
-        logging.info('Starting')
-        main()
-        logging.info('Exiting.')
-    except KeyboardInterrupt:
-        logging.warning('Cancelled by user.')
-        logging.info('Exiting.')
-        try:
-            sys.exit(0)
-        except SystemExit:
-            os._exit(0)
-    except Exception as ex:
-        logging.error('ERROR: ' + str(ex))
-        logging.info('Exiting.')
-        try:
+        # Logging the call
+        with open(log_file, 'a', encoding=ENCODING) as f:
+            f.write(log_msg + '\n')
+
+        if bad_arguments:
+            __debug("# Exiting: Bad arguments.")
             sys.exit(1)
-        except SystemExit:
-            os._exit(1)
+
+        # Main function
+        main(sys.argv)
+    except Exception as e:
+        __debug(str(e))
+        raise
