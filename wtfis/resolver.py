@@ -1,5 +1,4 @@
-from typing import Any, Optional, Union
-import json
+from typing import Optional, Union
 
 from wtfis.internal.clients.greynoise import GreynoiseClient
 from wtfis.internal.clients.ip2whois import Ip2WhoisClient
@@ -90,11 +89,11 @@ class Resolver:
         result: Union[IpAddressResult, DomainResult]
         if self.__is_target_ip:
             result = IpAddressResult(
-               entity=self.handler.vt_info,  # type: ignore
-               whois=self.handler.whois,
-               ip_enrich=self.handler.ip_enrich,
-               greynoise=self.handler.greynoise,
-               warnings=self.handler.warnings)
+                entity=self.handler.vt_info,  # type: ignore
+                whois=self.handler.whois,
+                ip_enrich=self.handler.ip_enrich,
+                greynoise=self.handler.greynoise,
+                warnings=self.handler.warnings)
         else:
             result = DomainResult(
                 entity=self.handler.vt_info,  # type: ignore
